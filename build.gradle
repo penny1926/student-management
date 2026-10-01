@@ -1,0 +1,175 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.openapi.generator' version '7.15.0'
+}
+
+group = 'com.andy.studentmanagement'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+// ============================================================
+// Configurations
+// ============================================================
+
+configurations {
+    swaggerCodegen
+}
+
+
+// ============================================================
+// Dependencies
+// ============================================================
+
+def springVersion = '7.0.0'
+
+dependencies {
+
+    // Spring MVC
+    implementation "org.springframework:spring-webmvc:$springVersion"
+    implementation "org.springframework:spring-jdbc:$springVersion"
+
+    // Servlet API
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+    
+    implementation 'com.h2database:h2:2.3.232'
+
+    // Jackson
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.0'
+
+    // Validation
+    implementation 'org.hibernate.validator:hibernate-validator:9.0.1.Final'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+
+   // ----------------------------------------------------------
+    // OpenAPI / Swagger annotations
+    // ----------------------------------------------------------
+
+    implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.37'
+
+    // Testing
+    testImplementation "org.springframework:spring-test:$springVersion"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+    testImplementation 'org.mockito:mockito-core:5.20.0'
+
+    // Swagger Codegen CLI
+    swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.52'
+}
+
+
+// ============================================================
+// OpenAPI Generator
+// ============================================================
+
+openApiGenerate {
+
+    // Generator to use
+    generatorName = 'spring'
+
+
+    // Your YAML file
+    inputSpec =
+            "$projectDir/src/main/resources/student-management-api.yaml"
+
+
+    // Generated source output
+    outputDir =
+            "$buildDir/generated/openapi"
+
+
+    // Package for generated API interfaces
+    apiPackage =
+            'com.andy.studentmanagement.api'
+
+
+    // Package for generated models
+    modelPackage =
+            'com.andy.studentmanagement.domain'
+
+
+    // Package for generated supporting classes
+    invokerPackage =
+            'com.andy.studentmanagement'
+
+
+    // Generator options
+    configOptions = [
+
+        // Generate interfaces instead of implementing controllers
+        interfaceOnly: 'true',
+
+        // Use tags from YAML to group APIs
+        useTags: 'true',
+
+        // Generate Jakarta EE imports
+        useJakartaEe: 'true',
+
+        // We are NOT using Spring Boot
+        useSpringBoot3: 'false',
+
+        // Jackson JSON serialization
+        serializationLibrary: 'jackson',
+
+        // Java date/time types
+        dateLibrary: 'java8',
+
+        // Don't generate nullable wrapper classes
+        openApiNullable: 'false'
+    ]
+
+
+   
+}
+
+
+// ============================================================
+// Add generated OpenAPI Java source
+// ============================================================
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated/openapi/src/main/java"
+        }
+    }
+}
+
+
+// ============================================================
+// Generate OpenAPI code before compiling
+// ============================================================
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('openApiGenerate')
+}
+
+
+// ============================================================
+// Tests
+// ============================================================
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+// ============================================================
+// Clean generated files
+// ============================================================
+
+tasks.named('clean') {
+    delete "$buildDir/generated/swagger"
+}

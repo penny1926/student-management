@@ -5,20 +5,55 @@ import java.util.List;
 import com.andy.studentmanagement.domain.Student;
 import com.andy.studentmanagement.domain.StudentRequest;
 
-
 public interface StudentService {
 
-    Student createStudent(StudentRequest studentRequest);
+	/**
+	 * Create a new student record 
+	 * @param studentRequest
+	 * @return
+	 */
+	void createStudent(StudentRequest studentRequest);
 
-    void deleteStudent(Long studentId);
+	/**
+	 * Delete a student and enrollment of courses
+	 * @param studentId
+	 */
+	void deleteStudent(Long studentId);
 
-    Student enrollCourse(Long studentId, Long courseId);
+	/**
+	 * Enroll one or more courses for a given student 
+	 * @param studentId
+	 * @param courseIdList
+	 * @return
+	 */
+	void enrollCourses(Long studentId, List<Long> courseIdList);
 
-    List<Student> getAllStudents();
+	/**
+	 * Get all the students
+	 * @return
+	 */
+	List<Student> getAllStudents();
 
-    Student getStudent(Long studentId);
+	/**
+	 * Get one student by student ID
+	 * @param studentId
+	 * @return
+	 */
+	Student getStudent(Long studentId);
 
-    Student removeCourse(Long studentId, Long courseId);
+	/**
+	 * Remove course enrollments for a given student
+	 * @param studentId
+	 * @param courseIdList
+	 * @return
+	 */
+	void unenrollCourses(Long studentId, List<Long> courseIdList);
 
-    Student updateStudent(Long studentId, StudentRequest studentRequest);
+	/**
+	 * Update a student's info
+	 * @param studentId
+	 * @param studentRequest
+	 * @return
+	 */
+	void updateStudent(Long studentId, StudentRequest studentRequest);
 }

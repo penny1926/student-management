@@ -2,6 +2,8 @@ package com.andy.studentmanagement.service;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,157 +15,138 @@ import com.andy.studentmanagement.domain.StudentRequest;
 import com.andy.studentmanagement.persistence.StudentDAO;
 
 @Service
-public class StudentServiceImpl implements StudentService{
-/**
- * Even though this project uses JSON server for CRUD operations instead of a real DB, Spring transaction annotation is still added here
- * to show that in real project, service layer methods should have proper transaction handling
- */
-	
-	private final StudentDAO  studentDAO;
-	
+public class StudentServiceImpl implements StudentService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(StudentServiceImpl.class);
+
+	private final StudentDAO studentDAO;
+
 	@Autowired
-	public StudentServiceImpl(StudentDAO  studentDAO) {
+	public StudentServiceImpl(StudentDAO studentDAO) {
 		this.studentDAO = studentDAO;
 	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
+	public void createStudent(StudentRequest studentRequest) {
+		LOG.info("Creating new student");
+		//we could add XSS validations here to make sure studenRequest doesn't contain XSS content
+		studentDAO.create(studentRequest);
+		LOG.info("Student created successfully");
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
+	public void deleteStudent(Long studentId) {
+
+		LOG.info("Deleting student with id: {}", studentId);
+
+        Student student = studentDAO.findById(studentId);
+
+        if (student == null) {
+            LOG.warn("Cannot delete student. Student not found: {}", studentId);
+            throw new StudentNotFoundException(studentId);
+        }
+
+        studentDAO.delete(studentId);
+
+        LOG.info("Student deleted successfully: {}", studentId);
+	}
 	
-	 @Override
-	    @Transactional(
-	        rollbackFor = Exception.class,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public Student createStudent(StudentRequest studentRequest) {
+	@Override
+	@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
+	public void updateStudent(Long studentId, StudentRequest studentRequest) {
 
-	        validateStudentRequest(studentRequest);
+		LOG.info("Updating student with id: {}", studentId);
 
-	        return studentDAO.create(studentRequest);
-	    }
+        Student existingStudent = studentDAO.findById(studentId);
 
-	    @Override
-	    @Transactional(
-	        rollbackFor = Exception.class,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public void deleteStudent(Long studentId) {
+        if (existingStudent == null) {
+            LOG.warn("Cannot update student. Student not found: {}", studentId);
+            throw new StudentNotFoundException(studentId);
+        }
 
-	        Student student = studentDAO.findById(studentId);
+        studentDAO.update(studentId, studentRequest);
 
-	        if (student == null) {
-	            throw new StudentNotFoundException(studentId);
-	        }
+        LOG.info("Student updated successfully: {}", studentId);
+	}
 
-	        studentDAO.delete(studentId);
-	    }
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	public List<Student> getAllStudents() {
 
-	    @Override
-	    @Transactional(
-	        rollbackFor = Exception.class,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public Student enrollCourse(Long studentId, Long courseId) {
+		LOG.info("Retrieving all students");
 
-	        Student student = studentDAO.findById(studentId);
+        List<Student> students = studentDAO.findAll();
 
-	        if (student == null) {
-	            throw new StudentNotFoundException(studentId);
-	        }
+        LOG.info("Retrieved {} student(s)", students.size());
 
-	        studentDAO.enrollCourse(studentId, courseId);
+        return students;
+	}
 
-	        return studentDAO.findById(studentId);
-	    }
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	public Student getStudent(Long studentId) {
 
-	    @Override
-	    @Transactional(
-	        readOnly = true,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public List<Student> getAllStudents() {
+		LOG.info("Retrieving student with id: {}", studentId);
 
-	        return studentDAO.findAll();
-	    }
+        Student student = studentDAO.findById(studentId);
 
-	    @Override
-	    @Transactional(
-	        readOnly = true,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public Student getStudent(Long studentId) {
+        if (student == null) {
+            LOG.warn("Student not found: {}", studentId);
+            throw new StudentNotFoundException(studentId);
+        }
 
-	        Student student = studentDAO.findById(studentId);
+        LOG.info("Student retrieved successfully: {}", studentId);
 
-	        if (student == null) {
-	            throw new StudentNotFoundException(studentId);
-	        }
+        return student;
+	}
 
-	        return student;
-	    }
+	@Override
+	@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
+	public void enrollCourses(Long studentId, List<Long> courseIdList) {
 
-	    @Override
-	    @Transactional(
-	        rollbackFor = Exception.class,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public Student removeCourse(Long studentId, Long courseId) {
+		LOG.info("Enrolling student {} in {} course(s)",
+                studentId,
+                courseIdList == null ? 0 : courseIdList.size());
 
-	        Student student = studentDAO.findById(studentId);
+        Student student = studentDAO.findById(studentId);
 
-	        if (student == null) {
-	            throw new StudentNotFoundException(studentId);
-	        }
+        if (student == null) {
+            LOG.warn("Cannot enroll courses. Student not found: {}", studentId);
+            throw new StudentNotFoundException(studentId);
+        }
 
-	        studentDAO.removeCourse(studentId, courseId);
+        studentDAO.enrollCourses(studentId, courseIdList);
 
-	        return studentDAO.findById(studentId);
-	    }
+        LOG.info("Successfully enrolled student {} in course(s): {}",
+                studentId,
+                courseIdList);
 
-	    @Override
-	    @Transactional(
-	        rollbackFor = Exception.class,
-	        propagation = Propagation.REQUIRED
-	    )
-	    public Student updateStudent(
-	            Long studentId,
-	            StudentRequest studentRequest) {
+	}
 
-	        Student existingStudent = studentDAO.findById(studentId);
 
-	        if (existingStudent == null) {
-	            throw new StudentNotFoundException(studentId);
-	        }
+	@Override
+	@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
+	public void unenrollCourses(Long studentId, List<Long> courseIdList) {
 
-	        validateStudentRequest(studentRequest);
+		LOG.info("Unenrolling student {} from {} course(s)",
+                studentId,
+                courseIdList == null ? 0 : courseIdList.size());
 
-	        return studentDAO.update(studentId, studentRequest);
-	    }
+        Student student = studentDAO.findById(studentId);
 
-	    private void validateStudentRequest(
-	            StudentRequest studentRequest) {
+        if (student == null) {
+            LOG.warn("Cannot unenroll courses. Student not found: {}", studentId);
+            throw new StudentNotFoundException(studentId);
+        }
 
-	        if (studentRequest == null) {
-	            throw new IllegalArgumentException(
-	                    "Student request cannot be null");
-	        }
+        studentDAO.removeCourses(studentId, courseIdList);
 
-	        if (studentRequest.getFirstName() == null ||
-	                studentRequest.getFirstName().isBlank()) {
+        LOG.info("Successfully unenrolled student {} from course(s): {}",
+                studentId,
+                courseIdList);
 
-	            throw new IllegalArgumentException(
-	                    "First name is required");
-	        }
-
-	        if (studentRequest.getLastName() == null ||
-	                studentRequest.getLastName().isBlank()) {
-
-	            throw new IllegalArgumentException(
-	                    "Last name is required");
-	        }
-
-	        if (studentRequest.getEmail() == null ||
-	                studentRequest.getEmail().isBlank()) {
-
-	            throw new IllegalArgumentException(
-	                    "Email is required");
-	        }
-	    }
+	}
 
 }

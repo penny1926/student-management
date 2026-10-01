@@ -41,11 +41,7 @@ paths:
               $ref: '#/components/schemas/StudentRequest'
       responses:
         '201':
-          description: Student created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
+          description: Student succesfully created
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -78,12 +74,8 @@ paths:
             schema:
               $ref: '#/components/schemas/StudentRequest'
       responses:
-        '200':
-          description: Student updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
+        '204':
+          description: Student successfully updated
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -99,36 +91,47 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /students/{studentId}/courses/{courseId}:
+  /students/{studentId}/courses:
     parameters:
       - $ref: '#/components/parameters/StudentId'
-      - $ref: '#/components/parameters/CourseId'
 
     post:
       tags: [Students]
-      summary: Enroll a student in a course
-      operationId: enrollCourse
+      summary: Enroll a student in one or multiple courses
+      operationId: enrollCourses
+      requestBody:
+        required: true
+        content:
+           application/json:
+             schema:
+               type: array
+               minItems: 1
+               items:
+                 type: integer
+                 format: int64
       responses:
-        '200':
-          description: Student after enrollment
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
+        '204':
+          description: Student successfully enrolled in the course(s)
         '404':
           $ref: '#/components/responses/NotFound'
 
     delete:
       tags: [Students]
-      summary: Remove a course enrollment from a student
-      operationId: removeCourse
+      summary: Remove one or more course enrollments from a student
+      operationId: unenrollCourses
+      requestBody:
+              required: true
+              content:
+                 application/json:
+                   schema:
+                     type: array
+                     minItems: 1
+                     items:
+                       type: integer
+                       format: int64
       responses:
         '200':
-          description: Student after removing enrollment
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
+          description: Courses have successfully been unenrolled from a student
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -160,10 +163,6 @@ paths:
       responses:
         '201':
           description: Course created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Course'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -197,11 +196,7 @@ paths:
               $ref: '#/components/schemas/CourseRequest'
       responses:
         '200':
-          description: Course updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Course'
+          description: Course updated successfully
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -270,6 +265,9 @@ components:
       type: object
       required: [firstName, lastName, email]
       properties:
+        id:
+          type: integer
+          format: int64
         firstName:
           type: string
           minLength: 1

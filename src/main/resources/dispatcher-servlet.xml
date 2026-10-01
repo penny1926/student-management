@@ -22,5 +22,10 @@
 
     <!-- Spring MVC -->
     <mvc:annotation-driven validator="validator"/>
+    
+    <!-- register authorization interceptor -->
+    <mvc:interceptors>
+       <bean class="com.andy.studentmanagement.security.AuthorizationInterceptor"/>
+    </mvc:interceptors>
 
 </beans>

@@ -3,10 +3,10 @@ package com.andy.studentmanagement.persistence;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import com.andy.studentmanagement.domain.Student;
@@ -16,6 +16,7 @@ import com.andy.studentmanagement.domain.StudentRequest;
 public class StudentDAO {
 
 	private final NamedParameterJdbcTemplate jdbcTemplate;
+	private static final String STUDENT_ID = "studentId";
 
 	public StudentDAO(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
 		this.jdbcTemplate = namedParameterJdbcTemplate;
@@ -27,7 +28,7 @@ public class StudentDAO {
 			       last_name,
 			       email
 			FROM students
-			ORDER BY id
+			ORDER BY last_name
 			""";
 
 	private static final String FIND_STUDENT_BY_ID = """
@@ -84,7 +85,7 @@ public class StudentDAO {
 	private static final String DELETE_STUDENT_COURSE = """
 			DELETE FROM student_courses
 			WHERE student_id = :studentId
-			  AND course_id = :courseId
+			  AND course_id in (:courseIdList)
 			""";
 
 	private static final String FIND_COURSE_IDS_BY_STUDENT_ID = """
@@ -94,113 +95,113 @@ public class StudentDAO {
 			ORDER BY course_id
 			""";
 
+	/**
+	 * Find all the students 
+	 * @return
+	 */
 	public List<Student> findAll() {
 
-		return jdbcTemplate.query(FIND_ALL_STUDENTS, Map.of(), (rs, rowNum) -> {
-
-			Student student = new Student();
-
-			student.setId(rs.getLong("id"));
-			student.setFirstName(rs.getString("first_name"));
-			student.setLastName(rs.getString("last_name"));
-			student.setEmail(rs.getString("email"));
-
-			return student;
-		});
+		 return jdbcTemplate.query(
+		            FIND_ALL_STUDENTS,
+		            Map.of(),
+		            new BeanPropertyRowMapper<>(Student.class)
+		    );
 	}
 
+	/**
+	 * Find a student by student ID
+	 * @param studentId
+	 * @return
+	 */
 	public Student findById(Long studentId) {
 
-		List<Student> students = jdbcTemplate.query(FIND_STUDENT_BY_ID, Map.of("studentId", studentId),
-				(rs, rowNum) -> {
-
-					Student student = new Student();
-
-					student.setId(rs.getLong("id"));
-					student.setFirstName(rs.getString("first_name"));
-					student.setLastName(rs.getString("last_name"));
-					student.setEmail(rs.getString("email"));
-
-					return student;
-				});
+		List<Student> students = jdbcTemplate.query(FIND_STUDENT_BY_ID, Map.of(STUDENT_ID, studentId),
+				new BeanPropertyRowMapper<>(Student.class));
 
 		if (students.isEmpty()) {
 			return null;
 		}
 
 		Student student = students.get(0);
-
 		loadCourses(student);
 
 		return student;
 	}
 
-	public Student create(StudentRequest studentRequest) {
+	/**
+	 * Create a new student
+	 * @param studentRequest
+	 * @return
+	 */
+	public void create(StudentRequest studentRequest) {
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("firstName", studentRequest.getFirstName())
 				.addValue("lastName", studentRequest.getLastName()).addValue("email", studentRequest.getEmail());
 
-		KeyHolder keyHolder = new GeneratedKeyHolder();
+		jdbcTemplate.update(INSERT_STUDENT, params);
 
-		jdbcTemplate.update(INSERT_STUDENT, params, keyHolder, new String[] { "id" });
-
-		Long studentId = keyHolder.getKey().longValue();
-
-		if (studentRequest.getCourseIds() != null) {
-
-			for (Long courseId : studentRequest.getCourseIds()) {
-
-				enrollCourse(studentId, courseId);
-			}
-		}
-
-		return findById(studentId);
 	}
 
-	public Student update(Long studentId, StudentRequest studentRequest) {
+	/**
+	 * 
+	 * @param studentId
+	 * @param studentRequest
+	 */
+	public void update(Long studentId, StudentRequest studentRequest) {
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("studentId", studentId)
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue(STUDENT_ID, studentId)
 				.addValue("firstName", studentRequest.getFirstName()).addValue("lastName", studentRequest.getLastName())
 				.addValue("email", studentRequest.getEmail());
 
 		jdbcTemplate.update(UPDATE_STUDENT, params);
 
-		/*
-		 * Replace existing course relationships.
-		 */
-		jdbcTemplate.update(DELETE_STUDENT_COURSES, Map.of("studentId", studentId));
-
-		if (studentRequest.getCourseIds() != null) {
-
-			for (Long courseId : studentRequest.getCourseIds()) {
-
-				enrollCourse(studentId, courseId);
-			}
-		}
-
-		return findById(studentId);
 	}
 
+	/**
+	 * 
+	 * @param studentId
+	 */
 	public void delete(Long studentId) {
 
-		jdbcTemplate.update(DELETE_STUDENT_COURSES, Map.of("studentId", studentId));
-
-		jdbcTemplate.update(DELETE_STUDENT, Map.of("studentId", studentId));
+		//delete all the student enrolled courses first
+		jdbcTemplate.update(DELETE_STUDENT_COURSES, Map.of(STUDENT_ID, studentId));
+        //delete the student record
+		jdbcTemplate.update(DELETE_STUDENT, Map.of(STUDENT_ID, studentId));
 	}
 
-	public void enrollCourse(Long studentId, Long courseId) {
+	/**
+	 * 
+	 * @param studentId
+	 * @param courseIdList
+	 */
+	public void enrollCourses(Long studentId, List<Long> courseIdList) {
+		 SqlParameterSource[] batch = courseIdList.stream()
+		            .map(courseId -> new MapSqlParameterSource()
+		                    .addValue(STUDENT_ID, studentId)
+		                    .addValue("courseId", courseId))
+		            .toArray(SqlParameterSource[]::new);
 
-		jdbcTemplate.update(INSERT_STUDENT_COURSE, Map.of("studentId", studentId, "courseId", courseId));
+		jdbcTemplate.batchUpdate(INSERT_STUDENT_COURSE, batch);
+
 	}
 
-	public void removeCourse(Long studentId, Long courseId) {
+	/**
+	 * 
+	 * @param studentId
+	 * @param courseIdList
+	 */
+	public void removeCourses(Long studentId, List<Long> courseIdList) {
 
-		jdbcTemplate.update(DELETE_STUDENT_COURSE, Map.of("studentId", studentId, "courseId", courseId));
+		jdbcTemplate.update(DELETE_STUDENT_COURSE, Map.of(STUDENT_ID, studentId, "courseIdList", courseIdList));
 	}
 
+	/**
+	 * 
+	 * @param student
+	 */
 	private void loadCourses(Student student) {
 
-		List<Long> courseIds = jdbcTemplate.query(FIND_COURSE_IDS_BY_STUDENT_ID, Map.of("studentId", student.getId()),
+		List<Long> courseIds = jdbcTemplate.query(FIND_COURSE_IDS_BY_STUDENT_ID, Map.of(STUDENT_ID, student.getId()),
 				(rs, rowNum) -> rs.getLong("course_id"));
 
 		student.setCourseIds(courseIds);

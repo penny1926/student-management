@@ -1,0 +1,51 @@
+<div class="page-container">
+
+  <div class="page-header">
+    <h1>{{ editMode ? 'Edit Course' : 'Create Course' }}</h1>
+  </div>
+
+  @if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  }
+
+  <div class="form-field">
+    <label for="name">Course Name</label>
+
+    <input
+      id="name"
+      name="name"
+      type="text"
+      [(ngModel)]="name"
+    />
+  </div>
+
+  <div class="form-field">
+    <label for="description">Description</label>
+
+    <input
+      id="description"
+      name="description"
+      type="text"
+      [(ngModel)]="description"
+    />
+  </div>
+
+  <div class="form-actions">
+
+    <button
+      type="button"
+      (click)="cancel()"
+    >
+      Cancel
+    </button>
+
+    <button
+      type="button"
+      (click)="save()"
+    >
+      {{ editMode ? 'Update' : 'Create' }}
+    </button>
+
+  </div>
+
+</div>

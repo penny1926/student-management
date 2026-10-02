@@ -1,0 +1,86 @@
+<div class="page-container">
+
+  <div class="page-header">
+    <h1>Students</h1>
+    <button (click)="createStudent()">Create Student</button>
+  </div>
+
+  <section class="search-section">
+    <h2>Search Students</h2>
+
+    <div class="search-form">
+
+      <div class="form-field">
+        <label for="firstName">First Name</label>
+        <input
+          id="firstName"
+          type="text"
+          [(ngModel)]="firstName"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="lastName">Last Name</label>
+        <input
+          id="lastName"
+          type="text"
+          [(ngModel)]="lastName"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="email"
+        />
+      </div>
+
+      <div class="search-buttons">
+        <button (click)="search()">Search</button>
+        <button type="button" (click)="clearSearch()">Clear</button>
+      </div>
+
+    </div>
+  </section>
+
+  @if (errorMessage) {
+    <p class="error">{{ errorMessage }}</p>
+  }
+
+ @if (showResults && !errorMessage) {
+  @if (!filteredStudents.length) {
+    <p>No students found.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (student of filteredStudents; track student.id) {
+          <tr>
+            <td>{{ student.id }}</td>
+            <td>{{ student.firstName }}</td>
+            <td>{{ student.lastName }}</td>
+            <td>{{ student.email }}</td>
+            <td>
+              <button (click)="viewStudent(student.id)">
+                View
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    }
+  }
+
+</div>

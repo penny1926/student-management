@@ -1,0 +1,71 @@
+<div class="page-container">
+  @if (loading) { <p>Loading...</p> }
+  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+  @if (student) {
+    <div class="page-header">
+      <h1>Student Details</h1>
+      <div><button (click)="editStudent()">Edit</button><button (click)="deleteStudent()">Delete</button><button (click)="backToStudents()">Back</button></div>
+    </div>
+    <section>
+      <h2>Student Information</h2>
+      <dl>
+        <dt>ID</dt><dd>{{ student.id }}</dd>
+        <dt>First Name</dt><dd>{{ student.firstName }}</dd>
+        <dt>Last Name</dt><dd>{{ student.lastName }}</dd>
+        <dt>Email</dt><dd>{{ student.email }}</dd>
+      </dl>
+    </section>
+    <section>
+  <div class="page-header">
+    <h2>Registered Courses</h2>
+
+    <button
+      type="button"
+      (click)="registerCourses()"
+    >
+      Register Courses
+    </button>
+  </div>
+
+  @if (!registeredCourses.length) {
+
+    <p>This student is not registered for any courses.</p>
+
+  } @else {
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (course of registeredCourses; track course.id) {
+
+          <tr>
+            <td>{{ course.id }}</td>
+            <td>{{ course.name }}</td>
+            <td>{{ course.description }}</td>
+
+            <td>
+              <button
+                type="button"
+                (click)="unregisterCourse(course.id)"
+              >
+                Unregister
+              </button>
+            </td>
+          </tr>
+
+        }
+      </tbody>
+    </table>
+
+  }
+</section>
+  }
+</div>

@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
+import com.andy.studentmanagement.domain.Course;
 import com.andy.studentmanagement.domain.Student;
 import com.andy.studentmanagement.domain.StudentRequest;
 
@@ -88,11 +89,15 @@ public class StudentDAO {
 			  AND course_id in (:courseIdList)
 			""";
 
-	private static final String FIND_COURSE_IDS_BY_STUDENT_ID = """
-			SELECT course_id
-			FROM student_courses
-			WHERE student_id = :studentId
-			ORDER BY course_id
+	private static final String FIND_COURSES_BY_STUDENT_ID = """
+			SELECT c.id,
+			            c.name,
+			            c.description
+			     FROM courses c
+			     INNER JOIN student_courses sc
+			             ON sc.course_id = c.id
+			     WHERE sc.student_id = :studentId
+			     ORDER BY c.id
 			""";
 
 	/**
@@ -101,11 +106,16 @@ public class StudentDAO {
 	 */
 	public List<Student> findAll() {
 
-		 return jdbcTemplate.query(
+		 
+		 List<Student> students = jdbcTemplate.query(
 		            FIND_ALL_STUDENTS,
 		            Map.of(),
 		            new BeanPropertyRowMapper<>(Student.class)
 		    );
+
+		    students.forEach(this::loadCourses);
+
+		    return students;
 	}
 
 	/**
@@ -201,10 +211,10 @@ public class StudentDAO {
 	 */
 	private void loadCourses(Student student) {
 
-		List<Long> courseIds = jdbcTemplate.query(FIND_COURSE_IDS_BY_STUDENT_ID, Map.of(STUDENT_ID, student.getId()),
-				(rs, rowNum) -> rs.getLong("course_id"));
+		List<Course> courses = jdbcTemplate.query(FIND_COURSES_BY_STUDENT_ID, Map.of(STUDENT_ID, student.getId()),
+				new BeanPropertyRowMapper<>(Course.class));
 
-		student.setCourseIds(courseIds);
+		student.setCourses(courses);
 	}
 
 }

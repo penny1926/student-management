@@ -237,7 +237,7 @@ components:
   schemas:
     Student:
       type: object
-      required: [id, firstName, lastName, email, courseIds]
+      required: [id, firstName, lastName, email, courses]
       properties:
         id:
           type: integer
@@ -253,13 +253,11 @@ components:
           type: string
           format: email
           example: john.smith@example.com
-        courseIds:
+        courses:
           type: array
-          description: IDs of courses in which the student is enrolled.
+          description: list of courses which the student is enrolled.
           items:
-            type: integer
-            format: int64
-          example: [1, 2, 3]
+            $ref: '#/components/schemas/Course'
 
     StudentRequest:
       type: object

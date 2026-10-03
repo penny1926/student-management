@@ -64,6 +64,7 @@ dependencies {
     testImplementation "org.springframework:spring-test:$springVersion"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
     testImplementation 'org.mockito:mockito-core:5.20.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.20.0'
 
     // Swagger Codegen CLI
     swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.52'
